@@ -7,9 +7,9 @@
     <script>
         var humidity = {{ humidity }};
         var temperature = {{ temperature }};
-        var labels = {{ labels }};
+        var labels = [{% for l in labels %}"{{l}}",{% endfor %}];
         var uptime = "{{ uptime }}";
-        var properties = {{ properties }};
+        var properties = {{ properties | tojson }};
     </script>
     <style>
         #page {
@@ -38,7 +38,7 @@
             var header = document.getElementById("header");
             for (var i = 0; i < properties.length; i++) {
                 var linkNode = document.createElement("a");
-                linkNode.href = properties[i]["url"];
+                linkNode.href = "/" + properties[i]["name"];
                 linkNode.innerText = properties[i]["duration_string"];
                 header.appendChild(linkNode);
             }
