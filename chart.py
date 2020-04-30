@@ -1,9 +1,7 @@
 #!/usr/bin/python3
 
 import sys
-import json
 import sqlite3
-import argparse
 from dataclasses import dataclass
 from time import localtime, strftime, time
 from datetime import datetime, timedelta
@@ -77,19 +75,6 @@ def format_timestamps(timestamps: List[datetime]) -> List[str]:
     return result
 
 
-def format_data(data: List[Optional[float]]) -> str:
-    result = []
-    for x in data:
-        if x:
-            if type(x) == str:
-                result.append("\"{}\"".format(x))
-            else:
-                result.append(str(x))
-        else:
-            result.append("NaN")
-    result = "[" + ",".join(result) + "]"
-    return result
-
 @app.route("/")
 @app.route("/<length>")
 def root_page(length="small"):
@@ -112,7 +97,10 @@ def root_page(length="small"):
 
     return render_template("chart.html", 
         properties=OUTPUT_PROPERTIES, 
-        temperature=format_data(data.temperature),
-        humidity=format_data(data.humidity),
+        temperature=data.temperature,
+        humidity=data.humidity,
         labels=format_timestamps(data.timestamp),
         uptime=strftime("%Y-%m-%d %I:%M %p", localtime()))
+
+if __name__ == '__main__':
+    app.run(debug=False, host='0.0.0.0')

@@ -5,10 +5,10 @@
     <title>Temperature/Humidity Chart</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
     <script>
-        var humidity = {{ humidity }};
-        var temperature = {{ temperature }};
-        var labels = [{% for l in labels %}"{{l}}",{% endfor %}];
-        var uptime = "{{ uptime }}";
+        var humidity = {{ humidity | tojson }};
+        var temperature = {{ temperature | tojson }};
+        var labels = {{ labels | tojson }};
+        var uptime = {{ uptime | tojson }};
         var properties = {{ properties | tojson }};
     </script>
     <style>
