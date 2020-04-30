@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+
+<head>
+    <title>Temperature/Humidity Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
+    <script>
+        var humidity = {{ humidity }};
+        var temperature = {{ temperature }};
+        var labels = {{ labels }};
+        var uptime = "{{ uptime }}";
+        var properties = {{ properties }};
+    </script>
+    <style>
+        #page {
+            width: 100%;
+        }
+
+        #header {
+            display: inline-flex;
+        }
+
+        #header > * {
+            margin: 0;
+            padding-right: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="page">
+        <div id="header" style="display:inline-flex;"></div>
+        <canvas id="chart"></canvas>
+    </div>
+
+    <script>
+        function setup_page() {
+            var header = document.getElementById("header");
+            for (var i = 0; i < properties.length; i++) {
+                var linkNode = document.createElement("a");
+                linkNode.href = properties[i]["url"];
+                linkNode.innerText = properties[i]["duration_string"];
+                header.appendChild(linkNode);
+            }
+            var uptime_node = document.createElement("p");
+            uptime_node.innerText = "Generated on: " + uptime;
+            header.appendChild(uptime_node)
+        }
+
+        function setup_chart() {
+            var ctx = document.getElementById('chart').getContext('2d');
+            var chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Humidity (%)',
+                        yAxisID: 'A',
+                        borderColor: '#7CE0F9B0',
+                        backgroundColor: '#7CE0F990',
+                        data: humidity
+                    }, {
+                        label: 'Temperature (c)',
+                        yAxisID: 'B',
+                        borderColor: '#D86C70B0',
+                        backgroundColor: '#D86C7090',
+                        data: temperature
+                    }],
+                },
+                options: {
+                    scales: {
+                        yAxes: [{
+                            id: 'A',
+                            type: 'linear',
+                            position: 'left',
+                        }, {
+                            id: 'B',
+                            type: 'linear',
+                            position: 'right',
+                        }]
+                    }
+                }
+            });
+        }
+
+        setup_page();
+        setup_chart();
+    </script>
+</body>
