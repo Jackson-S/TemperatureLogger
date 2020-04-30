@@ -1,0 +1,7 @@
+# m h  dom mon dow   command
+1 * * * * bash /home/pi/backup.sh >> ~/log.txt 2>&1
+*/5 * * * * /home/pi/logger.py
+*/5 * * * * /home/pi/chart.py -t small
+0 * * * * /home/pi/chart.py -t medium
+0 * * * * /home/pi/chart.py -t large
+1 0 * * 1 /home/pi/chart.py -t year
