@@ -1,0 +1,24 @@
+version: '3'
+
+services: 
+    logger:
+        container_name: termperature-logger
+        build: /home/pi/temperature/logger/
+        volumes:
+            - "/home/pi/temperature/database:/logger/temperatures.db"
+        environment: 
+            TZ: "Australia/Sydney"
+            SENSOR_ADDRESS: "192.168.1.6"
+        restart: unless-stopped
+    
+    chart:
+        container_name: temperature-chart
+        build: /home/pi/temperature/chart/
+        ports:
+            - "5000:5000/tcp"
+        volumes: 
+            - "/home/pi/temperature/database:/logger/temperatures.db"
+        environment: 
+            TZ: "Australia/Sydney"
+            SENSOR_ADDRESS: "192.168.1.6"
+        restart: unless-stopped

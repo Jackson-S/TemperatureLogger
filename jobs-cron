@@ -1,7 +1,0 @@
-# m h  dom mon dow   command
-1 * * * * bash ~/logger/backup.sh
-*/5 * * * * python3 ~/logger/logger.py
-*/5 * * * * python3 ~/logger/chart.py -t small
-0 * * * * python3 ~/logger/chart.py -t medium
-0 * * * * python3 ~/logger/chart.py -t large
-1 0 * * 1 python3 ~/logger/chart.py -t year
