@@ -25,7 +25,7 @@ class DatabaseRecorder(threading.Thread):
                 else:
                     print("Success")
             except requests.Timeout:
-                print("No response received from server", file=sys.stderr)
+                print("No response received from server")
             except BaseException as e:
                 print("Unknown error occurred:")
                 print(e)
@@ -48,7 +48,8 @@ def record():
             temperature = response_json["temperature"]
             humidity = response_json["humidity"]
         else:
-            print("Invalid response received from server: \n\"{}\"".format(response.content), file=sys.stderr)
+            print("Invalid response received from server: \n\"{}\"".format(response.content))
+            return False
 
     cursor.execute(query_text, (temperature, humidity))
 
