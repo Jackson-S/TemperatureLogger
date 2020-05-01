@@ -60,5 +60,6 @@ def record():
     return True
 
 stopFlag = threading.Event()
-thread = DatabaseRecorder(stopFlag, 5)
+# Set the timer for 5 minute intervals
+thread = DatabaseRecorder(stopFlag, 5 * 60)
 thread.start()
