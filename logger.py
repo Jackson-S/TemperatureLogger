@@ -187,14 +187,17 @@ def _mqtt_connect(client, userdata, flags, rc) -> None:
     channel = os.getenv("SENSOR_CHANNEL")
     temperature_topic = channel + "/Temperature"
     humidity_topic = channel + "/Humidity"
+    print(f"Subscribing to channels {temperature_topic} and {humidity_topic}.")
     print(temperature_topic, humidity_topic)
     client.subscribe(temperature_topic, 1)
     client.message_callback_add(temperature_topic, _mqtt_message_temperature)
     client.subscribe(humidity_topic, 2)
     client.message_callback_add(humidity_topic, _mqtt_message_humidity)
+    print("Completed subscriptions")
 
 
 def _mqtt_message_temperature(client, userdata, msg) -> None:
+    print("Received temperature data")
     global mqtt_sensor_data
     try:
         value = float(msg.payload)
@@ -212,6 +215,7 @@ def _mqtt_message_temperature(client, userdata, msg) -> None:
 
 
 def _mqtt_message_humidity(client, userdata, msg) -> None:
+    print("Received humidity data")
     global mqtt_sensor_data
     try:
         value = float(msg.payload)
@@ -240,7 +244,7 @@ def mqtt_start():
 
     client.connect("localhost", 1883, 60)
 
-    client.loop_forever(max_packets=10)
+    client.loop_forever(max_packets=10, retry_first_connection=True)
 
 
 if __name__ == "__main__":
@@ -254,6 +258,7 @@ if __name__ == "__main__":
         if not os.getenv("SENSOR_CHANNEL"):
             print("SENSOR_CHANNEL environment variable is not set, use HTTP or set channel")
             sys.exit(1)
+        print("Starting MQTT service")
         mqtt_start()
         sys.exit(1)
 
@@ -261,6 +266,7 @@ if __name__ == "__main__":
         if not os.getenv("SENSOR_ADDRESS"):
             print("SENSOR_ADDRESS environment variable is not set, use MQTT or set channel")
             sys.exit(1)
+        print("Starting HTTP service")
         http_start()
         sys.exit(1)
 
