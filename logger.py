@@ -6,6 +6,7 @@ import math
 import json
 import time
 import sqlite3
+import paho.mqtt.client as mqtt
 
 from typing import Optional, Iterable
 from datetime import datetime, timedelta
@@ -25,6 +26,9 @@ class RepeatTimer(Timer):
     def run(self):
         while not self.finished.wait(self.interval):
             self.function(*self.args, **self.kwargs)
+
+
+mqtt_sensor_data = SensorData(None, None)
 
 
 def fetch_data() -> Optional[SensorData]:
@@ -116,12 +120,14 @@ def _create_database(path: os.path):
     database.close()
 
 
-def record_sensor_data() -> None:
+def _http_record_sensor_data() -> None:
     sensor_data = fetch_data()
 
-    if not sensor_data:
-        return
+    if sensor_data:
+        record_sensor_data(sensor_data)
 
+
+def record_sensor_data(sensor_data: SensorData) -> None:
     query = "INSERT INTO Recordings (temperature, humidity) VALUES (?, ?)"
     arguments = [sensor_data.temperature, sensor_data.humidity]
 
@@ -160,16 +166,7 @@ def get_start_time_delta() -> int:
     return (initialisation_time - datetime.now()).total_seconds()
 
 
-if __name__ == "__main__":
-    # Check the environment
-    if not os.getenv("SENSOR_ADDRESS"):
-        print("SENSOR_ADDRESS environment variable is not set")
-        sys.exit(1)
-
-    if not os.getenv("DATABASE_LOCATION"):
-        print("DATABASE_LOCATION environment variable is not set")
-        sys.exit(1)
-
+def http_start():
     # Wait until the interval
     start_time_delta = get_start_time_delta()
 
@@ -184,3 +181,88 @@ if __name__ == "__main__":
     # Set a timer to repeat recordings every 5 minutes
     timer = RepeatTimer(5 * 60, record_sensor_data)
     timer.start()
+
+
+def _mqtt_connect(client, userdata, flags, rc) -> None:
+    channel = os.getenv("SENSOR_CHANNEL")
+    temperature_topic = channel + "/Temperature"
+    humidity_topic = channel + "/Humidity"
+    print(temperature_topic, humidity_topic)
+    client.subscribe(temperature_topic, 1)
+    client.message_callback_add(temperature_topic, _mqtt_message_temperature)
+    client.subscribe(humidity_topic, 2)
+    client.message_callback_add(humidity_topic, _mqtt_message_humidity)
+
+
+def _mqtt_message_temperature(client, userdata, msg) -> None:
+    global mqtt_sensor_data
+    try:
+        value = float(msg.payload)
+    except ValueError:
+        print("Unable to convert value " + msg.payload)
+        return
+
+    mqtt_sensor_data.temperature = value
+    print(f"Temperature {value}")
+    
+    if mqtt_sensor_data.temperature and mqtt_sensor_data.humidity:
+        record_sensor_data(mqtt_sensor_data)
+        mqtt_sensor_data = SensorData(None, None)
+        print("Logged sensor data")
+
+
+def _mqtt_message_humidity(client, userdata, msg) -> None:
+    global mqtt_sensor_data
+    try:
+        value = float(msg.payload)
+    except ValueError:
+        print("Unable to convert value " + msg.payload)
+        return
+
+    mqtt_sensor_data.humidity = value
+    print(f"Humidity {value}")
+    
+    if mqtt_sensor_data.temperature and mqtt_sensor_data.humidity:
+        record_sensor_data(mqtt_sensor_data)
+        mqtt_sensor_data = SensorData(None, None)
+        print("Logged sensor data")
+
+
+def _mqtt_message(client, userdata, msg) -> None:
+    print(msg.topic + " " + str(msg.payload))
+
+
+def mqtt_start():
+    client = mqtt.Client()
+    client.on_connect = _mqtt_connect
+    client.on_message = _mqtt_message
+    client.on_log = lambda x: print(x)
+
+    client.connect("localhost", 1883, 60)
+
+    client.loop_forever(max_packets=10)
+
+
+if __name__ == "__main__":
+    # Check the environment
+    if not os.getenv("DATABASE_LOCATION"):
+        print("DATABASE_LOCATION environment variable is not set")
+        sys.exit(1)
+
+    #Determine protocol type and begin execution
+    if os.getenv("PROTOCOL_TYPE") == "MQTT":
+        if not os.getenv("SENSOR_CHANNEL"):
+            print("SENSOR_CHANNEL environment variable is not set, use HTTP or set channel")
+            sys.exit(1)
+        mqtt_start()
+        sys.exit(1)
+
+    elif os.getenv("PROTOCOL_TYPE") == "HTTP":
+        if not os.getenv("SENSOR_ADDRESS"):
+            print("SENSOR_ADDRESS environment variable is not set, use MQTT or set channel")
+            sys.exit(1)
+        http_start()
+        sys.exit(1)
+
+    else:
+        print("PROTOCOL_TYPE not specified, MQTT or HTTP")
