@@ -238,7 +238,7 @@ def mqtt_start():
     client.on_message = _mqtt_message
     client.on_log = lambda x: print(x)
 
-    client.connect("192.168.1.4", 1883, 60)
+    client.connect("localhost", 1883, 60)
 
     client.loop_forever(max_packets=10)
 
