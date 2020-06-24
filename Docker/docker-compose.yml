@@ -8,6 +8,8 @@ services:
             - "/home/pi/temperature/database:/logger/temperatures.db"
         environment: 
             TZ: "Australia/Sydney"
+            PROTOCOL_TYPE: MQTT # Also available HTTP
+            SENSOR_CHANNEL: Temperature-Sensor_1/SHT30 # Required for MQTT, expects subchannels /Temperature and /Humidity
             SENSOR_ADDRESS: "192.168.1.6"
         restart: unless-stopped
     
