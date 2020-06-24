@@ -1,6 +1,6 @@
 FROM alpine:3
 
-RUN apk add py3-requests git
+RUN apk add py3-requests py3-paho-mqtt git
 
 COPY . /app
 
