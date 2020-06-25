@@ -15,7 +15,7 @@ class DatabaseManager:
         self.path = path
 
         if not os.path.isfile(path):
-            self._create_database(path)
+            self._create_database()
 
     def _create_database(self):
         # Connect to the database (will create the database in the process)
