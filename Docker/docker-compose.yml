@@ -3,7 +3,7 @@ version: '3'
 services: 
     logger:
         container_name: termperature-logger
-        build: /home/pi/temperature/logger/
+        build: ./logger/
         volumes:
             - "/home/pi/temperature/database:/logger/temperatures.db"
         environment:
@@ -15,7 +15,7 @@ services:
 
     chart:
         container_name: temperature-chart
-        build: /home/pi/temperature/chart/
+        build: ./chart/
         ports:
             - "5000:5000/tcp"
         volumes: 
