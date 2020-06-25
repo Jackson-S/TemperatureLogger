@@ -242,7 +242,7 @@ def mqtt_start():
     client.on_message = _mqtt_message
     client.on_log = lambda x: print(x)
 
-    client.connect("localhost", 1883, 60)
+    client.connect(os.getenv("DEVICE_ADDRESS"), 1883, 60)
 
     client.loop_forever(max_packets=10, retry_first_connection=True)
 
@@ -257,6 +257,9 @@ if __name__ == "__main__":
     if os.getenv("PROTOCOL_TYPE") == "MQTT":
         if not os.getenv("SENSOR_CHANNEL"):
             print("SENSOR_CHANNEL environment variable is not set, use HTTP or set channel")
+            sys.exit(1)
+        if not os.getenv("DEVICE_ADDRESS"):
+            print("DEVICE_ADDRESS environment variable is not set")
             sys.exit(1)
         print("Starting MQTT service")
         mqtt_start()
