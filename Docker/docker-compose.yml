@@ -5,7 +5,7 @@ services:
         container_name: termperature-logger
         build: ./logger/
         volumes:
-            - "/home/pi/temperature/database:/logger/temperatures.db"
+            - "/home/pi/database:/logger/temperatures.db"
         environment:
             TZ: "Australia/Sydney"
             DATABASE_LOCATION: "/logger/temperatures.db"
@@ -19,7 +19,7 @@ services:
         ports:
             - "5000:5000/tcp"
         volumes: 
-            - "/home/pi/temperature/database:/logger/temperatures.db"
+            - "/home/pi/database:/logger/temperatures.db"
         environment: 
             TZ: "Australia/Sydney"
             DATABASE_LOCATION: "/logger/temperatures.db"

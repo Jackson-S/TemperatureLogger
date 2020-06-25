@@ -82,10 +82,11 @@ def get_sensors(sensors: str) -> List[str]:
 
 
 def mqtt_connect(client, userdata, flags, rc) -> None:
-    for sensor in self.sensors:
+    global sensors
+    for sensor in sensors:
         topic = sensor + "/#"
         print(f"Subscribing to {topic}")
-        self.client.subscribe(topic)
+        client.subscribe(topic)
 
 
 def mqtt_message(client, userdata, message) -> None:
