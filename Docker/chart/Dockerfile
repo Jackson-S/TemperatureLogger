@@ -4,8 +4,6 @@ RUN apk add py3-flask git
 
 COPY . /app
 
-RUN git clone https://github.com/Jackson-S/TemperatureLogger /app/logger
-
 WORKDIR /app/logger
 
 ENTRYPOINT ["python3"]
