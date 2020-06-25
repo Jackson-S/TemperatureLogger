@@ -21,31 +21,30 @@ class DatabaseManager:
         # Connect to the database (will create the database in the process)
         database = sqlite3.connect(self.path)
 
-        schema = """
+        schema = ["""
         CREATE TABLE IF NOT EXISTS RecordingType (
             name STRING PRIMARY KEY,
             unit STRING NOT NULL
-        );
+        );""",
+        "INSERT OR IGNORE INTO RecordingType VALUES ('temperature', 'celsius');",
+        "INSERT OR IGNORE INTO RecordingType VALUES ('humidity', 'percent');",
+        "INSERT OR IGNORE INTO RecordingType VALUES ('pressure', 'hectopascal');",
 
-        INSERT OR IGNORE INTO RecordingType VALUES ('temperature', 'celsius');
-        INSERT OR IGNORE INTO RecordingType VALUES ('humidity', 'percent');
-        INSERT OR IGNORE INTO RecordingType VALUES ('pressure', 'hectopascal');
-
-        CREATE TABLE IF NOT EXISTS Responses (
+        """CREATE TABLE IF NOT EXISTS Responses (
         time DATETIME DEFAULT CURRENT_TIMESTAMP,
         device STRING NOT NULL,
         type STRING NOT NULL REFERENCES RecordingType(name),
         value FLOAT NOT NULL
-        );
-        """
+        );"""]
 
         # Initialise the database
         cursor = database.cursor()
-        try:
-            cursor.execute(schema)
-        except sqlite3.DatabaseError as error:
-            print(f"Unable to initialize database:\n{error}", file=sys.stderr)
-            sys.exit(1)
+        for command in schema:
+            try:
+                cursor.execute(command)
+            except sqlite3.DatabaseError as error:
+                print(f"Unable to initialize database:\n{error}", file=sys.stderr)
+                sys.exit(1)
 
         cursor.close()
         database.commit()
