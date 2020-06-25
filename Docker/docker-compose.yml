@@ -4,16 +4,13 @@ services:
     logger:
         container_name: termperature-logger
         build: /home/pi/temperature/logger/
-        ports:
-            - "8883:1883"
         volumes:
             - "/home/pi/temperature/database:/logger/temperatures.db"
         environment:
             TZ: "Australia/Sydney"
             DATABASE_LOCATION: "/logger/temperatures.db"
-            PROTOCOL_TYPE: "MQTT" # Also available HTTP
-            SENSOR_CHANNEL: "Temperature-Sensor_1/SHT30" # Required for MQTT, expects subchannels /Temperature and /Humidity
-            SENSOR_ADDRESS: "192.168.1.6"
+            DEVICE_ADDRESS: "192.168.1.4"
+            SENSORS: "Temperature-Sensor_1,Temperature-Sensor_2,Temperature-Sensor_3"
         restart: unless-stopped
 
     chart:

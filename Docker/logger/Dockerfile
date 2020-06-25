@@ -2,11 +2,9 @@ FROM alpine:3
 
 RUN apk add py3-requests py3-paho-mqtt git
 
-COPY . /app
+COPY ../ /app
 
-RUN git clone https://github.com/Jackson-S/TemperatureLogger /app/logger
-
-WORKDIR /app/logger
+WORKDIR /app
 
 ENTRYPOINT ["python3"]
 CMD ["logger.py"]
