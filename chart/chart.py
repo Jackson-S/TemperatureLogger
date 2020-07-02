@@ -86,8 +86,6 @@ def root_page():
     datatype = request.args.get("datatype", default="temperature", type=str)
     
     device = request.args.get("device", default=0, type=int)
-
-    devices = 
     
     # Fetch the data
     dataset = fetch_data(timeframe, datatype, device)
