@@ -24,15 +24,16 @@ class DatabaseManager:
             name STRING PRIMARY KEY,
             unit STRING NOT NULL
         );""",
+        
         "INSERT OR IGNORE INTO RecordingType VALUES ('temperature', 'celsius');",
         "INSERT OR IGNORE INTO RecordingType VALUES ('humidity', 'percent');",
         "INSERT OR IGNORE INTO RecordingType VALUES ('pressure', 'hectopascal');",
 
         """CREATE TABLE IF NOT EXISTS Responses (
-        time DATETIME DEFAULT CURRENT_TIMESTAMP,
-        device STRING NOT NULL,
-        type STRING NOT NULL REFERENCES RecordingType(name),
-        value FLOAT NOT NULL
+            time DATETIME DEFAULT CURRENT_TIMESTAMP,
+            device STRING NOT NULL,
+            type STRING NOT NULL REFERENCES RecordingType(name),
+            value FLOAT NOT NULL
         );"""]
 
         # Initialise the database

@@ -72,6 +72,12 @@ def pretty_print_timestamps(timestamp_list: List[datetime]) -> List[str]:
     return [x.strftime(timestamp_format) for x in timestamp_list]
 
 
+def get_devices() -> List[str]:
+    query = "SELECT UNIQUE(device) FROM Responses;"
+    query_result = database_query(query, [])
+    return query_result
+
+
 @app.route("/")
 def root_page():
     # Get the time delta in hours (default to 24)
@@ -80,16 +86,18 @@ def root_page():
     datatype = request.args.get("datatype", default="temperature", type=str)
     
     device = request.args.get("device", default=0, type=int)
+
+    devices = 
     
     # Fetch the data
     dataset = fetch_data(timeframe, datatype, device)
+    labels = pretty_print_timestamps(dataset.time)
 
-    return render_template("chart.html", 
-        properties=OUTPUT_PROPERTIES, 
-        temperature=data.temperature,
-        humidity=data.humidity,
-        labels=format_timestamps(data.timestamp),
-        uptime=strftime("%Y-%m-%d %I:%M %p", localtime()))
+    return render_template("chart.html",
+        labels=labels,
+        values=dataset.value,
+        devices=get_devices(),
+        datatype=datatype)
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0')
