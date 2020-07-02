@@ -24,7 +24,7 @@ def database_query(query: str, parameters: List[Any]) -> List[Any]:
 
     database = sqlite3.connect(database_location)
     cursor = database.cursor()
-    query = cursor.execute(query)
+    query = cursor.execute(query, parameters)
     result = query.fetchall()
     cursor.close()
     database.close()
