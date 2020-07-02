@@ -92,7 +92,7 @@ def mqtt_connect(client, userdata, flags, rc) -> None:
 def mqtt_message(client, userdata, message) -> None:
     topic = message.topic
     device = topic.split("/")[0]
-    measurement_type = topic.split("/")[-1]
+    measurement_type = topic.split("/")[-1].lower()
     value = message.payload
     print(f"Recieved message from {device}: [{measurement_type}: {value}]")
     try:
