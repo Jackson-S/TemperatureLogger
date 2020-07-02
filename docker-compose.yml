@@ -5,7 +5,7 @@ services:
         container_name: logger
         build: ./logger/
         volumes:
-            - "persist:/logger/persist"
+            - "./persist:/logger/persist"
         environment:
             TZ: "Australia/Sydney"
             DATABASE_LOCATION: "/logger/persist/database.db"
@@ -19,7 +19,7 @@ services:
         ports:
             - "5000:5000/tcp"
         volumes: 
-            - "persist:/logger/persist"
+            - "./persist:/logger/persist"
         environment: 
             TZ: "Australia/Sydney"
             DATABASE_LOCATION: "/logger/persist/database.db"
