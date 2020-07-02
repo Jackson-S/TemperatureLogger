@@ -7,8 +7,6 @@ import paho.mqtt.client as mqtt
 
 from typing import Optional, Iterable, List
 
-import requests
-
 
 class DatabaseManager:
     def __init__(self, path: os.path):

@@ -2,26 +2,26 @@ version: '3'
 
 services: 
     logger:
-        container_name: termperature-logger
+        container_name: logger
         build: ./logger/
         volumes:
-            - "/home/pi/database:/logger/temperatures.db"
+            - "persist:/logger/persist"
         environment:
             TZ: "Australia/Sydney"
-            DATABASE_LOCATION: "/logger/temperatures.db"
+            DATABASE_LOCATION: "/logger/persist/database.db"
             DEVICE_ADDRESS: "192.168.1.4"
             SENSORS: "Temperature-Sensor_1,Temperature-Sensor_2,Temperature-Sensor_3"
         restart: unless-stopped
 
     chart:
-        container_name: temperature-chart
+        container_name: chart
         build: ./chart/
         ports:
             - "5000:5000/tcp"
         volumes: 
-            - "/home/pi/database:/logger/temperatures.db"
+            - "persist:/logger/persist"
         environment: 
             TZ: "Australia/Sydney"
-            DATABASE_LOCATION: "/logger/temperatures.db"
+            DATABASE_LOCATION: "/logger/persist/database.db"
             SENSOR_ADDRESS: "192.168.1.6"
         restart: unless-stopped

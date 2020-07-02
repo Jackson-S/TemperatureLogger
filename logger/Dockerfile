@@ -1,8 +1,8 @@
 FROM alpine:3
 
-RUN apk add py3-requests py3-paho-mqtt git
+RUN apk add py3-paho-mqtt
 
-COPY ./ /app
+COPY ./logger.py /app/logger.py
 
 WORKDIR /app
 
