@@ -32,7 +32,7 @@ def database_query(query: str, parameters: List[Any]) -> List[Any]:
     return result
 
 
-def create_dataset(data: List[List[str, str]]) -> Dataset:
+def create_dataset(data: List[List[str]]) -> Dataset:
     times = [datetime.fromisoformat(x[0]) for x in data]
     values = [x[1] for x in data]
     return Dataset(times, values)
