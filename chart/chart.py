@@ -73,7 +73,7 @@ def pretty_print_timestamps(timestamp_list: List[datetime]) -> List[str]:
 
 
 def get_devices() -> List[str]:
-    query = "SELECT UNIQUE(device) FROM Responses ORDER BY device;"
+    query = "SELECT DISTINCT(device) FROM Responses ORDER BY device;"
     query_result = database_query(query, [])
     return query_result
 
