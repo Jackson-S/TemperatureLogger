@@ -73,7 +73,7 @@ def pretty_print_timestamps(timestamp_list: List[datetime]) -> List[str]:
 
 
 def get_devices() -> List[str]:
-    query = "SELECT UNIQUE(device) FROM Responses;"
+    query = "SELECT UNIQUE(device) FROM Responses ORDER BY device;"
     query_result = database_query(query, [])
     return query_result
 
@@ -85,7 +85,10 @@ def root_page():
     
     datatype = request.args.get("datatype", default="temperature", type=str)
     
-    device = request.args.get("device", default=0, type=int)
+    device_index = request.args.get("device", default=0, type=int)
+
+    devices = get_devices()
+    device = devices[device_index]
     
     # Fetch the data
     dataset = fetch_data(timeframe, datatype, device)
