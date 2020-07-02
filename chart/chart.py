@@ -75,7 +75,7 @@ def pretty_print_timestamps(timestamp_list: List[datetime]) -> List[str]:
 def get_devices() -> List[str]:
     query = "SELECT DISTINCT(device) FROM Responses ORDER BY device;"
     query_result = database_query(query, [])
-    return query_result
+    return [str(x[0]) for x in query_result]
 
 
 @app.route("/")
@@ -97,7 +97,7 @@ def root_page():
     return render_template("chart.html",
         labels=labels,
         values=dataset.value,
-        devices=get_devices(),
+        devices=devices,
         datatype=datatype)
 
 if __name__ == '__main__':
