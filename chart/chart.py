@@ -44,7 +44,7 @@ def fetch_data(range: timedelta, datatype: str, device: str) -> Dataset:
         FROM Responses
         WHERE device = ? 
             AND type = ?
-            AND timestamp >= ?;
+            AND time >= ?;
     """
 
     # Convert the range we want to the least recent date in the range, and convert it to a string format SQLite understands    
