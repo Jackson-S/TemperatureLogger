@@ -3,6 +3,7 @@
 import os
 import sys
 import sqlite3
+import statistics
 from dataclasses import dataclass
 from time import localtime, strftime, time
 from datetime import datetime, timedelta
@@ -47,20 +48,33 @@ def filter_data(data: Dataset) -> Dataset:
 
     maximum_response_size = 500
 
-    new_times = [sorted_dataset[0][0]]
-    new_values = [sorted_dataset[0][1]]
-
-    print(new_times)
+    new_times = []
+    new_values = []
 
     # Get the amount minimum amount of minutes between each recording
-    earliest_time = new_times[0]
+    earliest_time = sorted_dataset[0][0]
     min_timeframe = (datetime.utcnow() - earliest_time).total_seconds() / 60 / maximum_response_size
+
+    skipped_values = []
 
     # Filter out values that aren't within the minimum timeframe
     for time, value in sorted_dataset:
-        if ((time - new_times[-1]).total_seconds() / 60 >= min_timeframe):
+        if len(new_times) == 0 or len(new_values) == 0:
             new_times.append(time)
             new_values.append(value)
+        elif (time - new_times[-1]).total_seconds() / 60 >= min_timeframe:
+            # Get the average of all the skipped values
+            skipped_values.append(value)
+            mean = statistics.mean(skipped_values)
+            rounded_mean = round(mean, 2)
+            skipped_values = []
+
+            # Append the average
+            new_times.append(time)
+            new_values.append(rounded_mean)
+        else:
+            # Append the value to be averaged later
+            skipped_values.append(value)
 
     return Dataset(new_times, new_values)
 

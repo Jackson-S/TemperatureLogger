@@ -11,6 +11,7 @@
         var datatypes = {{ datatypes | tojson }}
         var timeframes = [{"name": "Day", "value": 24}, {"name": "Week", "value": 144}, {"name": "Month", "value": 24 * 30}, {"name": "Year", "value": 24 * 365}];
         var timeFormat = 'MM/DD/YYYY HH:mm';
+        var chart = null;
 
         function fill_selects() {
             var ids = [{"id": "device-select", "data": devices}, {"id": "datatype-select", "data": datatypes}, {"id": "timeframe-select", "data": timeframes}];
@@ -54,18 +55,31 @@
             return result;  
         }
 
-        function setup_chart(datatype, labels, values) {
+        function update_chart(datatype, labels, values) {
+            const backgrounds = {
+                "Temperature": ["#FCB1C3B0", "#FCB1C390"], 
+                "Humidity": ["#7CE0F9B0", "#7CE0F990"], 
+                "Pressure": ["#7CE0F9B0", "#7CE0F990"]
+            };
+            chart.data.labels = set_times(labels);
+            chart.data.datasets = [{
+                label: datatype,
+                borderColor: backgrounds[datatype][0],
+                backgroundColor: backgrounds[datatype][1],
+                data: values,
+            }];
+            chart.update();
+        }
+
+        function setup_chart() {
             var ctx = document.getElementById('chart').getContext('2d');
-            var backgrounds = {"Temperature": ["#FCB1C3B0", "#FCB1C390"], "Humidity": ["#7CE0F9B0", "#7CE0F990"], "Pressure": ["#7CE0F9B0", "#7CE0F990"]};
-            var chart = new Chart(ctx, {
+            chart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: set_times(labels),
+                    labels: [],
                     datasets: [{
-                        label: datatype,
-                        borderColor: backgrounds[datatype][0],
-                        backgroundColor: backgrounds[datatype][1],
-                        data: values
+                        label: "",
+                        data: []
                     }],
                 },
                 options: {
@@ -106,7 +120,7 @@
                   throw new Error('Something went wrong on api server!');
                 }
             }).then(response => {
-                setup_chart(response.type, response.labels, response.values);
+                update_chart(response.type, response.labels, response.values);
             }).catch(error => {
                 console.error(error);
             });
@@ -126,6 +140,7 @@
 
     <script>
         fill_selects();
+        setup_chart();
         request_chart();
     </script>
 </body>
