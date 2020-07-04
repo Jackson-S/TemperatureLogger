@@ -1,0 +1,12 @@
+#page {
+    width: 100%;
+}
+
+#header {
+    display: inline-flex;
+}
+
+#header > * {
+    margin: 0;
+    padding-right: 5px;
+}

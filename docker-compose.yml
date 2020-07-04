@@ -1,6 +1,6 @@
 version: '3'
 
-services: 
+services:
     logger:
         container_name: logger
         build: ./logger/
@@ -18,10 +18,9 @@ services:
         build: ./chart/
         ports:
             - "5000:5000/tcp"
-        volumes: 
+        volumes:
             - "./persist:/logger/persist"
-        environment: 
+        environment:
             TZ: "Australia/Sydney"
             DATABASE_LOCATION: "/logger/persist/database.db"
-            SENSOR_ADDRESS: "192.168.1.6"
         restart: unless-stopped

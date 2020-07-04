@@ -8,7 +8,7 @@ from time import localtime, strftime, time
 from datetime import datetime, timedelta
 from typing import List, Optional, Any
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 
 app=Flask(__name__)
 
@@ -38,7 +38,34 @@ def create_dataset(data: List[List[str]]) -> Dataset:
     return Dataset(times, values)
 
 
-def fetch_data(range: timedelta, datatype: str, device: str) -> Dataset:
+def filter_data(data: Dataset) -> Dataset:
+    if len(data.time) == 0:
+        return data
+
+    # Sort the data
+    sorted_dataset = sorted([*zip(data.time, data.value)], key=lambda x: x[0])
+
+    maximum_response_size = 500
+
+    new_times = [sorted_dataset[0][0]]
+    new_values = [sorted_dataset[0][1]]
+
+    print(new_times)
+
+    # Get the amount minimum amount of minutes between each recording
+    earliest_time = new_times[0]
+    min_timeframe = (datetime.utcnow() - earliest_time).total_seconds() / 60 / maximum_response_size
+
+    # Filter out values that aren't within the minimum timeframe
+    for time, value in sorted_dataset:
+        if ((time - new_times[-1]).total_seconds() / 60 >= min_timeframe):
+            new_times.append(time)
+            new_values.append(value)
+
+    return Dataset(new_times, new_values)
+
+
+def fetch_data(time_range: timedelta, datatype: str, device: str) -> Dataset:
     query = """
     SELECT DATETIME(time, 'localtime'), value 
         FROM Responses
@@ -48,28 +75,17 @@ def fetch_data(range: timedelta, datatype: str, device: str) -> Dataset:
     """
 
     # Convert the range we want to the least recent date in the range, and convert it to a string format SQLite understands    
-    earliest_time = (datetime.utcnow() - range).strftime("%Y-%m-%d %H:%M:%S")
+    earliest_time = (datetime.utcnow() - time_range).strftime("%Y-%m-%d %H:%M:%S")
 
     parameters = [device, datatype, earliest_time]
 
     query_response = database_query(query, parameters)
 
-    return create_dataset(query_response)
+    return filter_data(create_dataset(query_response))
 
 
-def pretty_print_timestamps(timestamp_list: List[datetime]) -> List[str]:
-    # Get the range of times covered by the list
-    max_time_delta = datetime.utcnow() - min(timestamp_list)
-    
-    if max_time_delta >= timedelta(weeks=1):
-        timestamp_format = "%Y/%m/%d %H:%M"
-    elif max_time_delta >= timedelta(days=1):
-        timestamp_format = "%a %-I %p"
-    else:
-        timestamp_format = "%I:%M %p"
-
-    # Convert the times to the format string decided above and return
-    return [x.strftime(timestamp_format) for x in timestamp_list]
+def to_iso_timestamp(timestamp_list: List[datetime]) -> List[str]:
+    return [x.isoformat() for x in timestamp_list]
 
 
 def get_devices() -> List[str]:
@@ -78,27 +94,34 @@ def get_devices() -> List[str]:
     return [str(x[0]) for x in query_result]
 
 
+def get_datatypes() -> List[str]:
+    query = "SELECT name FROM RecordingType ORDER BY name;"
+    query_result = database_query(query, [])
+    return [str(x[0]) for x in query_result]
+
+
 @app.route("/")
 def root_page():
-    # Get the time delta in hours (default to 24)
-    timeframe = timedelta(hours=request.args.get("timeframe", default=24, type=int))
-    
-    datatype = request.args.get("datatype", default="temperature", type=str)
-    
-    device_index = request.args.get("device", default=0, type=int)
-
     devices = get_devices()
-    device = devices[device_index]
-    
+    datatypes = get_datatypes()
+    datatypes = [x.title() for x in datatypes]
+
+    return render_template("index.html", devices=devices, datatypes=datatypes)
+
+
+@app.route("/<timeframe>/<device_index>/<datatype>")
+def request_data(timeframe="24", device_index="0", datatype="temperature"):
+    device = get_devices()[int(device_index)]
+    timeframe = timedelta(hours=int(timeframe))
+
     # Fetch the data
     dataset = fetch_data(timeframe, datatype, device)
-    labels = pretty_print_timestamps(dataset.time)
+    labels = to_iso_timestamp(dataset.time)
+    values = dataset.value
+    
+    json_data = {"type": datatype.title(), "labels": labels, "values": values}
 
-    return render_template("chart.html",
-        labels=labels,
-        values=dataset.value,
-        devices=devices,
-        datatype=datatype)
+    return jsonify(json_data)
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0')
