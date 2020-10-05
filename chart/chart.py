@@ -1,141 +1,130 @@
 #!/usr/bin/python3
 
 import os
-import sys
 import sqlite3
-import statistics
-from dataclasses import dataclass
-from time import localtime, strftime, time
 from datetime import datetime, timedelta
-from typing import List, Optional, Any
+from typing import List, Any, Iterator, Set
 
 from flask import Flask, render_template, request, jsonify
 
 app=Flask(__name__)
 
-@dataclass
-class Dataset:
-    time: List[datetime]
-    value: List[float]
+DEVICES = None
+DATATYPES = None
+MAX_DATA_POINTS = 500
+
+# Get the database location from the OS environment (should be set by docker)
+DATABASE_LOCATION = os.getenv("DATABASE_LOCATION")
 
 
-def database_query(query: str, parameters: List[Any]) -> List[Any]:
-    # Get the database location from the OS environment (should be set by docker)
-    database_location = os.getenv("DATABASE_LOCATION")
+class DataPoint:
+    def __init__(self, time: str, value: float, type: str):
+        self.assigned_values = set(type)
+        self.time: datetime = datetime.fromisoformat(time)
+        self.temperature: float = None
+        self.humidity: float = None
+        self.pressure: float = None
+        self.assign_value(value, type)
+    
+    def assign_value(self, value: float, type: str) -> None:
+        if (type == "temperature"):
+            self.temperature = value
+        elif (type == "humidity"):
+            self.humidity = value
+        elif (type == "pressure"):
+            self.pressure = value
+        self.assigned_values |= set(type)
 
-    database = sqlite3.connect(database_location)
-    cursor = database.cursor()
-    query = cursor.execute(query, parameters)
-    result = query.fetchall()
-    cursor.close()
-    database.close()
 
-    return result
+def database_query(query: str, params: List[Any] = []) -> Iterator[Any]:
+    database = sqlite3.connect(DATABASE_LOCATION)
+    database.set_trace_callback(lambda x: print(x))
+    results = database.execute(query, params)
+    return results
 
 
-def create_dataset(data: List[List[str]]) -> Dataset:
-    times = [datetime.fromisoformat(x[0]) for x in data]
-    values = [x[1] for x in data]
-    return Dataset(times, values)
+def filter_data(data: Iterator[DataPoint]) -> Iterator[DataPoint]:
+    first_point = data[0]
+    last_point = first_point
 
-
-def filter_data(data: Dataset) -> Dataset:
-    if len(data.time) == 0:
-        return data
-
-    # Sort the data
-    sorted_dataset = sorted([*zip(data.time, data.value)], key=lambda x: x[0])
-
-    maximum_response_size = 500
-
-    new_times = []
-    new_values = []
+    yield first_point
 
     # Get the amount minimum amount of minutes between each recording
-    earliest_time = sorted_dataset[0][0]
-    min_timeframe = (datetime.utcnow() - earliest_time).total_seconds() / 60 / maximum_response_size
-
-    skipped_values = []
+    min_timeframe = (datetime.utcnow() - first_point.time).total_seconds() / 60 / MAX_DATA_POINTS
 
     # Filter out values that aren't within the minimum timeframe
-    for time, value in sorted_dataset:
-        if len(new_times) == 0 or len(new_values) == 0:
-            new_times.append(time)
-            new_values.append(value)
-        elif (time - new_times[-1]).total_seconds() / 60 >= min_timeframe:
-            # Get the average of all the skipped values
-            skipped_values.append(value)
-            mean = statistics.mean(skipped_values)
-            rounded_mean = round(mean, 2)
-            skipped_values = []
+    for data_point in data:
+        if (data_point.time - last_point.time).total_seconds() / 60 >= min_timeframe:
+            last_point = data_point
+            yield data_point
 
-            # Append the average
-            new_times.append(time)
-            new_values.append(rounded_mean)
+
+def combine_data(query_results: List[Any]) -> List[DataPoint]:
+    results: List[DataPoint] = [DataPoint(*next(query_results))]
+
+    for time, value, type in query_results:
+        if datetime.fromisoformat(time) - results[-1].time <= timedelta(seconds=300):
+            if type not in results[-1].assigned_values:
+                results[-1].assign_value(value, type)
+            else:
+                results.append(DataPoint(time, value, type))
         else:
-            # Append the value to be averaged later
-            skipped_values.append(value)
+            results.append(DataPoint(time, value, type))
+    
+    return results
 
-    return Dataset(new_times, new_values)
 
-
-def fetch_data(time_range: timedelta, datatype: str, device: str) -> Dataset:
-    query = """
-    SELECT DATETIME(time, 'localtime'), value 
-        FROM Responses
-        WHERE device = ? 
-            AND type = ?
-            AND time >= ?;
-    """
+def fetch_data(time_range: timedelta, device: str) -> List[DataPoint]:
+    query = "SELECT time, value, type FROM Responses WHERE time >= ? AND device = ? ORDER BY time ASC"
 
     # Convert the range we want to the least recent date in the range, and convert it to a string format SQLite understands    
-    earliest_time = (datetime.utcnow() - time_range).strftime("%Y-%m-%d %H:%M:%S")
+    earliest_time = (datetime.utcnow() - time_range)
 
-    parameters = [device, datatype, earliest_time]
+    parameters = [earliest_time, device]
+
+    print(parameters)
 
     query_response = database_query(query, parameters)
 
-    return filter_data(create_dataset(query_response))
-
-
-def to_iso_timestamp(timestamp_list: List[datetime]) -> List[str]:
-    return [x.isoformat() for x in timestamp_list]
+    return filter_data(combine_data(query_response))
 
 
 def get_devices() -> List[str]:
     query = "SELECT DISTINCT(device) FROM Responses ORDER BY device;"
-    query_result = database_query(query, [])
-    return [str(x[0]) for x in query_result]
+    query_result = database_query(query)
+    return list(x[0] for x in query_result)
 
 
 def get_datatypes() -> List[str]:
     query = "SELECT name FROM RecordingType ORDER BY name;"
-    query_result = database_query(query, [])
-    return [str(x[0]) for x in query_result]
+    query_result = database_query(query)
+    return list(x[0] for x in query_result)
 
 
 @app.route("/")
 def root_page():
-    devices = get_devices()
-    datatypes = get_datatypes()
-    datatypes = [x.title() for x in datatypes]
+    datatypes = [x.title() for x in DATATYPES]
 
-    return render_template("index.html", devices=devices, datatypes=datatypes)
+    return render_template("index.html", devices=DEVICES, datatypes=datatypes)
 
 
-@app.route("/<timeframe>/<device_index>/<datatype>")
-def request_data(timeframe="24", device_index="0", datatype="temperature"):
-    device = get_devices()[int(device_index)]
+@app.route("/<timeframe>/<device_name>")
+def request_data(timeframe="24", device_name="Temperature-Sensor_1"):
     timeframe = timedelta(hours=int(timeframe))
+    print(timeframe, device_name, DATABASE_LOCATION)
 
     # Fetch the data
-    dataset = fetch_data(timeframe, datatype, device)
-    labels = to_iso_timestamp(dataset.time)
-    values = dataset.value
+    dataset = fetch_data(timeframe, str(device_name))
+    datapoints = list(dataset)
     
-    json_data = {"type": datatype.title(), "labels": labels, "values": values}
+    json_data = {"labels": list(x.time.isoformat() for x in datapoints), 
+                 "Temperature": list(x.temperature for x in datapoints),
+                 "Humidity": list(x.humidity for x in datapoints),
+                 "Pressure": list(x.pressure for x in datapoints)}
 
     return jsonify(json_data)
 
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0')
+    DEVICES = get_devices()
+    DATATYPES = get_datatypes()
+    app.run(debug=True, host='0.0.0.0')

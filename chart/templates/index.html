@@ -4,135 +4,21 @@
 <head>
     <title>Temperature/Humidity Chart</title>
     <link rel="stylesheet" type="text/css" href="static/style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.js"></script>
     <script>
         var devices = {{ devices | tojson }}
         var datatypes = {{ datatypes | tojson }}
         var timeframes = [{"name": "Day", "value": 24}, {"name": "Week", "value": 144}, {"name": "Month", "value": 24 * 30}, {"name": "Year", "value": 24 * 365}];
         var timeFormat = 'MM/DD/YYYY HH:mm';
         var chart = null;
-
-        function fill_selects() {
-            var ids = [{"id": "device-select", "data": devices}, {"id": "datatype-select", "data": datatypes}, {"id": "timeframe-select", "data": timeframes}];
-            for (var i = 0; i < ids.length; i++) {
-                var id = ids[i].id;
-                var data = ids[i].data;
-                var parent = document.getElementById(id);
-                for (var j = 0; j < data.length; j++) {
-                    var value = data[j];
-                    var newNode = document.createElement("option");
-                    // devices are index-based on request
-                    if (id == "device-select") {
-                        newNode.value = j;
-                    } else if (id == "timeframe-select") {
-                        newNode.value = value.value;
-                    } else {
-                        newNode.value = value.toLowerCase();
-                    }
-
-                    if (id == "timeframe-select") {
-                        newNode.innerText = value.name;
-                    } else {
-                        newNode.innerText = value;
-                    }
-
-                    parent.appendChild(newNode);
-                }
-            }
-        }
-
-		function newDate(days) {
-			return moment(days);
-		}
-
-        function set_times(labels) {
-            var result = [];
-            for (var i = 0; i < labels.length; i++) {
-                result.push(newDate(labels[i]));
-            }
-
-            return result;  
-        }
-
-        function update_chart(datatype, labels, values) {
-            const backgrounds = {
-                "Temperature": ["#FCB1C3B0", "#FCB1C390"], 
-                "Humidity": ["#7CE0F9B0", "#7CE0F990"], 
-                "Pressure": ["#7CE0F9B0", "#7CE0F990"]
-            };
-            chart.data.labels = set_times(labels);
-            chart.data.datasets = [{
-                label: datatype,
-                borderColor: backgrounds[datatype][0],
-                backgroundColor: backgrounds[datatype][1],
-                data: values,
-            }];
-            chart.update();
-        }
-
-        function setup_chart() {
-            var ctx = document.getElementById('chart').getContext('2d');
-            chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: "",
-                        data: []
-                    }],
-                },
-                options: {
-                    scales: {
-                        xAxes: [{
-                            type: 'time',
-                            time: {
-                                parser: timeFormat,
-                                tooltipFormat: 'll HH:mm'
-                            },
-                            scaleLabel: {
-                                display: true,
-                                labelString: 'Date'
-                            }
-                        }],
-                        yAxes: [{
-                            id: 'A',
-                            type: 'linear',
-                            position: 'left',
-                        }]
-                    }
-                }
-            });
-        }
-
-        function request_chart() {
-            var device_val = document.getElementById("device-select").value;
-            var datatype_val = document.getElementById("datatype-select").value;
-            var timeframe_val = document.getElementById("timeframe-select").value;
-            var request_url = "/" + timeframe_val + "/" + device_val + "/" + datatype_val;
-
-            var request = new Request(request_url);
-
-            fetch(request).then(response => {
-                if (response.status === 200) {
-                  return response.json();
-                } else {
-                  throw new Error('Something went wrong on api server!');
-                }
-            }).then(response => {
-                update_chart(response.type, response.labels, response.values);
-            }).catch(error => {
-                console.error(error);
-            });
-            
-        }
     </script>
+    <script src="static/chart_setup.js"></script>
 </head>
 
 <body>
     <div id="header">
         <select id="device-select" onchange="request_chart()"></select>
-        <select id="datatype-select" onchange="request_chart()"></select>
         <select id="timeframe-select" onchange="request_chart()"></select>
     </div>
 
