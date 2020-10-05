@@ -38,9 +38,7 @@ class DataPoint:
 
 def database_query(query: str, params: List[Any] = []) -> Iterator[Any]:
     database = sqlite3.connect(DATABASE_LOCATION)
-    database.set_trace_callback(lambda x: print(x))
-    results = database.execute(query, params)
-    return results
+    return database.execute(query, params)
 
 
 def filter_data(data: Iterator[DataPoint]) -> Iterator[DataPoint]:
