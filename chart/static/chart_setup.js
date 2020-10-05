@@ -21,7 +21,7 @@ function update_chart(labels, temperature, humidity, pressure) {
     const backgrounds = {
         "Temperature": ["#FCB1C3B0", "#FCB1C390"],
         "Humidity": ["#7CE0F9B0", "#7CE0F990"],
-        "Pressure": ["#7CE0F9B0", "#7CE0F990"]
+        "Pressure": ["#F5F5F5B0", "#F5F5F590"]
     };
 
     chart.data.labels = labels.map(x => moment(x));
@@ -41,7 +41,15 @@ function update_chart(labels, temperature, humidity, pressure) {
         yAxisID: 'temperature'
     }];
 
-    console.log(chart);
+    if (pressure.some(x => x !== null)) {
+        chart.data.datasets.push({
+            label: "Pressure",
+            borderColor: backgrounds["Pressure"][0],
+            backgroundColor: backgrounds["Pressure"][1],
+            data: pressure,
+            yAxisID: 'pressure'
+        });
+    }
 
     chart.update();
 }
@@ -60,8 +68,9 @@ function setup_chart() {
                      scaleLabel: {display: true, labelString: "Date"}
                     }],
                 yAxes: [
-                    {id: "temperature", type: "linear", position: "left"},
-                    {id: "humidity", type: "linear", position: "left"}
+                    {id: "temperature", type: "linear", position: "left", stacked: true},
+                    {id: "humidity", type: "linear", position: "left", stacked: true},
+                    {id: "pressure", type: "linear", position: "right", stacked: false}
                 ]
             }
         }
